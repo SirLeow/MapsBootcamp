@@ -4,6 +4,8 @@ import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -15,8 +17,11 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
+import com.google.android.gms.maps.model.MarkerOptions
+import java.util.*
 
 class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener {
 
@@ -75,14 +80,38 @@ class MapsActivity : AppCompatActivity(), OnMapReadyCallback, GoogleMap.OnMarker
 
         mMap.isMyLocationEnabled = true
 
+        mMap.mapType = GoogleMap.MAP_TYPE_HYBRID
+
         fusedLocationClient.lastLocation.addOnSuccessListener(this) { location ->
             if (location != null) {
                 lastLocation = location
-                val currentLocation = LatLng(location.latitude, location.longitude)
-                mMap.animateCamera(CameraUpdateFactory.newLatLng(currentLocation))
+                val currentLatLng = LatLng(location.latitude, location.longitude)
+                placeMarkerOnMap(currentLatLng)
+                mMap.animateCamera(CameraUpdateFactory.newLatLng(currentLatLng))
             }
         }
 
+    }
+
+    private fun placeMarkerOnMap(location: LatLng){
+        val markerOptions = MarkerOptions().position(location)
+        markerOptions.icon(BitmapDescriptorFactory.fromBitmap(
+            BitmapFactory.decodeResource(resources,R.mipmap.ic_user_location)))
+
+        markerOptions.title(getAddress(location))
+        mMap.addMarker(markerOptions)
+    }
+
+    private fun getAddress(latLng: LatLng): String {
+        //val addresses: List<Address>
+        val geocoder = Geocoder(this, Locale.getDefault())
+
+        val addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        //val city = addresses[0].locality
+        //val state = addresses[0].adminArea
+        //val country = addresses[0].countryName
+        //val postalCode = addresses[0].postalCode
+        return addresses[0].getAddressLine(0)
     }
 
     override fun onMarkerClick(p0: Marker) = false
